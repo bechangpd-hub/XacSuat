@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc Nghiệm Xác Suất & Thống Kê Toán 9</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --secondary: #1565c0;
+            --danger: #d32f2f;
+            --light: #f1f8e9;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #e8f5e9;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 700px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+        }
+        /* Bảng chọn câu hỏi */
+        .grid-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .grid-item {
+            padding: 12px 0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .grid-item.active { background: var(--secondary); color: white; }
+        .grid-item.correct { background: var(--primary); color: white; }
+        .grid-item.wrong { background: var(--danger); color: white; }
+
+        /* Vùng câu hỏi */
+        .question-box {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            min-height: 80px;
+        }
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            padding: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .option-btn:hover:not(:disabled) { border-color: var(--secondary); }
+        .option-btn:disabled { cursor: default; }
+
+        /* Giải thích */
+        .explanation {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            line-height: 1.6;
+            border-left: 5px solid;
+            animation: slideDown 0.4s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .explanation.correct { background: #e8f5e9; border-color: var(--primary); color: #1b5e20; }
+        .explanation.wrong { background: #ffebee; border-color: var(--danger); color: #b71c1c; }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .btn-nav {
+            padding: 10px 20px;
+            background: #455a64;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>📊 TRẮC NGHIỆM XÁC SUẤT - THỐNG KÊ 9</h1>
+    
+    <div class="grid-board" id="gridBoard"></div>
+
+    <div id="quizContainer">
+        <div class="question-box" id="qText"></div>
+        <div class="option-list" id="optList"></div>
+        <div class="explanation" id="explBox"></div>
+
+        <div class="nav">
+            <button class="btn-nav" onclick="changeQ(-1)">⬅️ Câu trước</button>
+            <button class="btn-nav" onclick="changeQ(1)">Câu sau ➡️</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = [
+        {
+            q: "Trong một hộp có 5 bút xanh và 3 bút đỏ. Lấy ngẫu nhiên 1 bút. Xác suất thực nghiệm của biến cố 'Lấy được bút xanh' là:",
+            opts: ["A. \\(\\frac{3}{8}\\)", "B. \\(\\frac{5}{8}\\)", "C. \\(\\frac{5}{3}\\)", "D. \\(\\frac{3}{5}\\)"],
+            ans: 1,
+            exp: "Tổng số bút trong hộp là: \\(5 + 3 = 8\\) (bút).<br>Số kết quả thuận lợi cho biến cố 'Lấy được bút xanh' là 5.<br>Vậy xác suất là: \\(P = \\frac{5}{8}\\)."
+        },
+        {
+            q: "Xác suất thực nghiệm của biến cố A sau n hoạt động được tính bằng tỉ số \\(\\frac{n(A)}{n}\\), trong đó \\(n(A)\\) được gọi là:",
+            opts: ["A. Tổng số lần thực hiện hoạt động", "B. Xác suất thực nghiệm của biến cố A", "C. Số lần biến cố A xảy ra", "D. Khả năng sự kiện A không xảy ra"],
+            ans: 2,
+            exp: "Theo định nghĩa xác suất thực nghiệm: \\(n\\) là tổng số lần thực hiện hoạt động, còn \\(n(A)\\) là số lần mà biến cố A xuất hiện trong n lần đó."
+        },
+        {
+            q: "Nam gieo một con xúc xắc 10 lần thì thấy mặt 4 chấm xuất hiện 6 lần. Xác suất thực nghiệm xuất hiện mặt 4 chấm là:",
+            opts: ["A. 0,4", "B. 0,5", "C. 0,6", "D. 1"],
+            ans: 2,
+            exp: "Số lần thực hiện là 10. Số lần mặt 4 chấm xuất hiện là 6.<br>Xác suất thực nghiệm là: \\(\\frac{6}{10} = 0,6\\)."
+        },
+        {
+            q: "Bảng thống kê cân nặng (kg) của một số học sinh:<br><table><tr><td>28</td><td>30</td><td>31</td><td>32</td><td>29</td><td>31</td><td>34</td><td>34</td></tr><tr><td>29</td><td>33</td><td>30</td><td>32</td><td>34</td><td>36</td><td>34</td><td>29</td><td>31</td></tr></table>Hỏi có bao nhiêu giá trị khác nhau trong bảng số liệu trên?",
+            opts: ["A. 8", "B. 9", "C. 7", "D. 10"],
+            ans: 1,
+            exp: "Liệt kê các giá trị khác nhau: {28, 29, 30, 31, 32, 33, 34, 35, 36}.<br>Đếm tất cả có 9 giá trị khác nhau."
+        },
+        {
+            q: "Trong một tổ học sinh có 7 nam và 3 nữ. Chọn ngẫu nhiên một bạn làm tổ trưởng. Xác suất để chọn được một bạn nữ là:",
+            opts: ["A. \\(\\frac{7}{10}\\)", "B. \\(\\frac{1}{3}\\)", "C. \\(\\frac{3}{10}\\)", "D. \\(\\frac{3}{7}\\)"],
+            ans: 2,
+            exp: "Tổng số học sinh là: \\(7 + 3 = 10\\).<br>Số học sinh nữ là 3.<br>Xác suất chọn được bạn nữ là: \\(\\frac{3}{10}\\)."
+        },
+        {
+            q: "Gieo đồng thời hai đồng tiền cân đối và đồng chất. Xác suất để có đúng một đồng tiền xuất hiện mặt sấp là:",
+            opts: ["A. \\(\\frac{1}{4}\\)", "B. \\(\\frac{3}{4}\\)", "C. \\(\\frac{1}{8}\\)", "D. \\(\\frac{1}{2}\\)"],
+            ans: 3,
+            exp: "Không gian mẫu: {SS, SN, NS, NN} (4 kết quả).<br>Biến cố có đúng 1 mặt sấp: {SN, NS} (2 kết quả).<br>Xác suất: \\(\\frac{2}{4} = \\frac{1}{2}\\)."
+        },
+        {
+            q: "Bảng dữ liệu cân nặng (kg) của 20 quả cam. Hỏi số quả cam nặng hơn 1,2 kg chiếm bao nhiêu phần trăm?<br><table><tr><td>Nhóm (kg)</td><td>(0,6; 0,8]</td><td>(0,8; 1,0]</td><td>(1,0; 1,2]</td><td>(1,2; 1,4]</td><td>(1,4; 1,6]</td></tr><tr><td>Số quả</td><td>3</td><td>4</td><td>5</td><td>5</td><td>3</td></tr></table>",
+            opts: ["A. 10%", "B. 15%", "C. 20%", "D. 40%"],
+            ans: 3,
+            exp: "Số quả nặng hơn 1,2kg thuộc 2 nhóm cuối: 5 + 3 = 8 quả.<br>Tổng số quả là 20.<br>Tỉ lệ phần trăm: \\(\\frac{8}{20} \\times 100\\% = 40\\%\\)."
+        },
+        {
+            q: "Bảng thống kê thời gian (giây) chạy 100m của học sinh. Tần số của nhóm [11; 12) là bao nhiêu?<br><table><tr><td>Thời gian (s)</td><td>[10; 11)</td><td>[11; 12)</td><td>[12; 13)</td></tr><tr><td>Tần số</td><td>4</td><td>12</td><td>16</td></tr></table>",
+            opts: ["A. 4", "B. 12", "C. 16", "D. 10"],
+            ans: 1,
+            exp: "Dựa vào bảng tần số, hàng 'Tần số' tương ứng với cột '[11; 12)' là số 12."
+        },
+        {
+            q: "Dựa vào bảng ở câu 8, có bao nhiêu học sinh chạy 100m với thời gian ít hơn 11 giây?",
+            opts: ["A. 4", "B. 12", "C. 16", "D. 32"],
+            ans: 0,
+            exp: "Thời gian ít hơn 11 giây tương ứng với nhóm [10; 11). Tần số của nhóm này là 4."
+        },
+        {
+            q: "Bảng quãng đường (km) đi tập thể dục hàng ngày. Tần số của nhóm [12; 13) là:",
+            opts: ["A. 2", "B. 9", "C. 16", "D. 3"],
+            ans: 2,
+            exp: "Nhìn vào bảng, giá trị tần số ứng với nhóm [12; 13) là 16."
+        },
+        {
+            q: "Thống kê chiều cao 50 cây keo lai (m). Tần số của nhóm chiều cao [8,5; 8,9) là:",
+            opts: ["A. 10", "B. 15", "C. 5", "D. 20"],
+            ans: 2,
+            exp: "Trong bảng số liệu (ảnh 2), tần số của nhóm [8,5; 8,9) được ghi là 5."
+        },
+        {
+            q: "Mật mã của một két sắt gồm 3 chữ số khác nhau chọn từ {1, 2, 3}. Bạn Nam muốn mở két, xác suất Nam bấm đúng mã ngay lần đầu là:",
+            opts: ["A. \\(\\frac{1}{3}\\)", "B. \\(\\frac{1}{9}\\)", "C. \\(\\frac{1}{27}\\)", "D. \\(\\frac{1}{6}\\)"],
+            ans: 3,
+            exp: "Số các mật mã có 3 chữ số khác nhau từ {1,2,3} là hoán vị của 3: \\(3 \\times 2 \\times 1 = 6\\) mã.<br>Mã đúng chỉ có 1.<br>Xác suất: \\(\\frac{1}{6}\\)."
+        },
+        {
+            q: "Gieo một con xúc xắc 50 lần, mặt 5 chấm xuất hiện 6 lần. Xác suất thực nghiệm xuất hiện mặt 5 chấm là:",
+            opts: ["A. 12%", "B. 6%", "C. 10%", "D. 15%"],
+            ans: 0,
+            exp: "Xác suất thực nghiệm: \\(\\frac{6}{50} = \\frac{12}{100} = 12\\%\\)."
+        },
+        {
+            q: "Trên giá sách có 10 quyển Toán, 8 quyển Văn và 7 quyển Lý. Lấy ngẫu nhiên 1 cuốn. Xác suất để lấy được cuốn sách Toán là:",
+            opts: ["A. \\(\\frac{2}{5}\\)", "B. \\(\\frac{8}{25}\\)", "C. \\(\\frac{7}{25}\\)", "D. \\(\\frac{1}{3}\\)"],
+            ans: 0,
+            exp: "Tổng số sách: \\(10 + 8 + 7 = 25\\).<br>Số sách Toán là 10.<br>Xác suất: \\(\\frac{10}{25} = \\frac{2}{5}\\)."
+        },
+        {
+            q: "Chọn một số tự nhiên không lớn hơn 20. Xác suất để chọn được số nguyên tố là:",
+            opts: ["A. \\(\\frac{8}{21}\\)", "B. \\(\\frac{7}{21}\\)", "C. \\(\\frac{9}{21}\\)", "D. \\(\\frac{10}{21}\\)"],
+            ans: 0,
+            exp: "Số tự nhiên không quá 20 gồm: {0, 1, ..., 20} -> 21 số.<br>Số nguyên tố không quá 20: {2, 3, 5, 7, 11, 13, 17, 19} -> Có 8 số.<br>Xác suất: \\(\\frac{8}{21}\\)."
+        },
+        {
+            q: "Một hộp chứa 5 tấm thẻ đánh số {3, 5, 6, 7, 9}. Lấy ngẫu nhiên 1 thẻ. Xác suất để lấy được thẻ ghi số chẵn là:",
+            opts: ["A. 0", "B. 0,2", "C. 0,4", "D. 0,6"],
+            ans: 1,
+            exp: "Trong dãy {3, 5, 6, 7, 9}, chỉ có duy nhất số 6 là số chẵn.<br>Xác suất: \\(\\frac{1}{5} = 0,2\\)."
+        },
+        {
+            q: "Dựa vào bảng cử li ném tạ (m) của 16 lần tập. Số lần ném dưới 20,4 m là bao nhiêu lần?<br><table><tr><td>Cự li</td><td>[20; 20,2)</td><td>[20,2; 20,4)</td><td>[20,4; 20,6)</td></tr><tr><td>Số lần</td><td>1</td><td>4</td><td>5</td></tr></table>",
+            opts: ["A. 1", "B. 4", "C. 5", "D. 10"],
+            ans: 2,
+            exp: "Ném dưới 20,4m gồm 2 nhóm: [20; 20,2) và [20,2; 20,4).<br>Tổng số lần: 1 + 4 = 5 (lần)."
+        },
+        {
+            q: "Xác suất thực nghiệm của số lần ném tạ dưới 20,4 m ở câu 17 là:",
+            opts: ["A. 25%", "B. 28%", "C. 31,25%", "D. 50%"],
+            ans: 2,
+            exp: "Tổng số lần ném là 16. Số lần ném dưới 20,4m là 5.<br>Xác suất: \\(\\frac{5}{16} = 0,3125 = 31,25\\%\\)."
+        },
+        {
+            q: "Bảng quãng đường đi xe đạp (km) của cô Hà trong 30 ngày. Tần số tương đối của nhóm có tần số thấp nhất là:<br><table><tr><td>Nhóm</td><td>[10; 11)</td><td>[11; 12)</td><td>[12; 13)</td><td>[13; 14)</td></tr><tr><td>Tần số</td><td>9</td><td>12</td><td>6</td><td>3</td></tr></table>",
+            opts: ["A. 10%", "B. 20%", "C. 30%", "D. 40%"],
+            ans: 0,
+            exp: "Tần số thấp nhất là 3 (nhóm [13; 14)).<br>Tổng số ngày là 30.<br>Tần số tương đối: \\(\\frac{3}{30} = 10\\%\\)."
+        },
+        {
+            q: "Dựa vào bảng câu 19, số ngày cô Hà đi xe đạp từ 11 km đến dưới 14 km là:",
+            opts: ["A. 18", "B. 20", "C. 21", "D. 30"],
+            ans: 2,
+            exp: "Từ 11km đến dưới 14km gồm 3 nhóm cuối: 12 + 6 + 3 = 21 (ngày)."
+        }
+    ];
+
+    let currentIdx = 0;
+    let status = new Array(data.length).fill(null);
+
+    function init() {
+        const board = document.getElementById('gridBoard');
+        board.innerHTML = data.map((_, i) => `<div class="grid-item" id="btn${i}" onclick="jump(${i})">${i+1}</div>`).join('');
+        renderQ();
+    }
+
+    function renderQ() {
+        const q = data[currentIdx];
+        document.getElementById('qText').innerHTML = `<b>Câu ${currentIdx + 1}:</b> ${q.q}`;
+        const list = document.getElementById('optList');
+        list.innerHTML = q.opts.map((o, i) => `<button class="option-btn" onclick="check(${i})" ${status[currentIdx] !== null ? 'disabled' : ''}>${o}</button>`).join('');
+        
+        document.querySelectorAll('.grid-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`btn${currentIdx}`).classList.add('active');
+
+        const expl = document.getElementById('explBox');
+        if(status[currentIdx] !== null) {
+            expl.style.display = 'block';
+            expl.className = status[currentIdx] ? 'explanation correct' : 'explanation wrong';
+            expl.innerHTML = (status[currentIdx] ? "✅ <b>Chính xác!</b><br>" : "❌ <b>Sai rồi!</b><br>") + q.exp;
+        } else {
+            expl.style.display = 'none';
+        }
+        if(window.MathJax) MathJax.typesetPromise();
+    }
+
+    function check(i) {
+        if(status[currentIdx] !== null) return;
+        const isCorrect = (i === data[currentIdx].ans);
+        status[currentIdx] = isCorrect;
+        const btn = document.getElementById(`btn${currentIdx}`);
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        renderQ();
+    }
+
+    function jump(i) { currentIdx = i; renderQ(); }
+    function changeQ(n) {
+        currentIdx = (currentIdx + n + data.length) % data.length;
+        renderQ();
+    }
+
+    init();
+</script>
+</body>
+</html>
